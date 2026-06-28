@@ -24,4 +24,4 @@ The project consists of:
 ## Run with Docker
 
 ```bash
-docker-compose up --build
+make serivce-up
