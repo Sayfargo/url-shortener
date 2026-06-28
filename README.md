@@ -1,27 +1,30 @@
-# URL Shortener (gRPC)
+# URL Shortener
 
-Simple URL shortener microservice written in Go.  
-The service provides an API for creating short links and resolving them back to original URLs via gRPC.
+A simple URL shortener microservice written in Go.
+
+The service exposes a gRPC API for creating short URLs and resolving them back to their original addresses. An HTTP API Gateway is also provided as a thin adapter over the gRPC service.
 
 ## Features
 
 - Create short URLs
 - Resolve original URLs by short code
-- gRPC-based communication
+- gRPC API
 - PostgreSQL for persistent storage
-- Redis caching layer for faster lookups
-- Docker support
+- Redis caching
+- Docker & Docker Compose support
 
 ## Architecture
 
 The project consists of:
 
-- gRPC server (core service)
-- PostgreSQL repository (persistent storage)
-- Redis cache (fast access layer)
-- API Gateway (HTTP → gRPC)
+- gRPC service (core business logic)
+- PostgreSQL
+- Redis
 
-## Run with Docker
+## Run
 
 ```bash
-make serivce-up
+make service-up
+```
+
+The service will start all required containers using Docker Compose.
