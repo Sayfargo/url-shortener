@@ -21,7 +21,7 @@ func NewPostgresRepository(pool *pgxpool.Pool) *PostgresRepository {
 }
 
 var (
-	ErrNotExists    = errors.New("value doesn't exists")
+	ErrNotExists    = errors.New("record doesn't exists")
 	ErrAlredyExists = errors.New("already exists")
 )
 

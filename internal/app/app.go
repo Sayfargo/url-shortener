@@ -23,7 +23,7 @@ func MustNew(cfg *core_config.Config) *App {
 
 	pool, err := core_db.InitWithRerty(cfg, log, 5, time.Second*2)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	client := redis.NewClient(&redis.Options{
 		Addr: cfg.Redis.Addr,

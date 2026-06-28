@@ -58,21 +58,21 @@ func (s *serverAPI) Get(ctx context.Context, request *urlv1.GetUrlRequest) (*url
 
 	url, err := s.svc.Get(ctx, request.ShortCode)
 	if err != nil {
-		if errors.Is(err, service_urlshortener.ErrUrlDoesNotExists) {
+		if errors.Is(err, service_urlshortener.ErrNotExists) {
 
 			l.Debug(
-				"url not found",
+				"URL not found",
 				slog.String("err", err.Error()),
 			)
 
 			return nil, status.Error(
 				codes.NotFound,
-				"url not found",
+				"URL not found",
 			)
 		}
 
 		l.Error(
-			"failed to get url",
+			"internal service error",
 			slog.String("err", err.Error()),
 		)
 
@@ -98,20 +98,20 @@ func (s *serverAPI) Create(ctx context.Context, request *urlv1.CreateShortCodeRe
 
 	if err := s.val.Var(request.Url, "url"); err != nil {
 		l.Debug(
-			"failed to validate url",
+			"failed to validate URL",
 			slog.String("err", err.Error()),
 		)
 
 		return nil, status.Error(
 			codes.InvalidArgument,
-			"invalid url",
+			"invalid URL",
 		)
 	}
 
 	shortCode, err := s.svc.CreateShortCode(ctx, request.Url)
 	if err != nil {
 		if errors.Is(err, repository_urlshortener_postgres.ErrAlredyExists) {
-			return nil, status.Error(codes.AlreadyExists, "try again O_o")
+			return nil, status.Error(codes.AlreadyExists, "already exists")
 		}
 		return nil, status.Error(
 			codes.Internal,

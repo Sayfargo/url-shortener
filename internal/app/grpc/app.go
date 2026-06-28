@@ -33,17 +33,6 @@ func NewApp(
 	}
 }
 
-func (a *App) Stop() {
-	const op = "grpcapp.Stop"
-
-	a.log.With(slog.String("op", op)).Info("stopping gRPC server", slog.Int("port", a.port))
-
-	a.gRPCServer.GracefulStop()
-
-	a.log.Close()
-
-}
-
 func (a *App) Run() error {
 	const op = "grpcapp.Run"
 
@@ -72,4 +61,15 @@ func (a *App) Run() error {
 	}
 
 	return nil
+}
+
+func (a *App) Stop() {
+	const op = "grpcapp.Stop"
+
+	a.log.With(slog.String("op", op)).Info("stopping gRPC server", slog.Int("port", a.port))
+
+	a.gRPCServer.GracefulStop()
+
+	a.log.Close()
+
 }

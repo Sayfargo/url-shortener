@@ -13,12 +13,12 @@ import (
 )
 
 type UrlPostgresRepository interface {
-	Create(ctx context.Context, originalURL, shortCode string) error
+	Create(ctx context.Context, shortCode, originalURL string) error
 	Get(ctx context.Context, shortCode string) (string, error)
 }
 
 type UrlRedisRepository interface {
-	Set(ctx context.Context, originalURL, shortCode string) error
+	Set(ctx context.Context, shortCode, originalURL string) error
 	Get(ctx context.Context, shortCode string) (string, error)
 }
 
@@ -33,9 +33,9 @@ const (
 )
 
 var (
-	ErrUrlDoesNotExists = errors.New("url doesn't exists")
-	ErrReponseTimeout   = errors.New("response timeout")
-	ErrCodeAlredyExists = errors.New("short code already exists")
+	ErrNotExists      = errors.New("record doesn't exists")
+	ErrReponseTimeout = errors.New("response timeout")
+	ErrAlreadyExists  = errors.New("record already exists")
 )
 
 func NewUrlShortenerService(
@@ -69,7 +69,7 @@ func (u *UrlShortenerService) Get(ctx context.Context, shortCode string) (string
 	}
 
 	if !errors.Is(err, repository_urlshortener_redis.ErrNotExists) {
-		l.Debug(
+		l.Error(
 			"Redis error. Falling back to Postgres",
 			slog.String("err", err.Error()),
 		)
@@ -79,21 +79,27 @@ func (u *UrlShortenerService) Get(ctx context.Context, shortCode string) (string
 	if err != nil {
 		if errors.Is(err, repository_urlshortener_redis.ErrNotExists) {
 			l.Debug(
-				"failed to find URL",
+				"Record not found",
 				slog.String("err", err.Error()),
 			)
-			return "", ErrUrlDoesNotExists
+			return "", ErrNotExists
 		}
 
 		l.Error(
-			"failed to get URL via Postgres",
+			"Internal Postgres error",
 			slog.String("err", err.Error()),
 		)
 
 		return "", fmt.Errorf("postgres error : %w", err)
 	}
 
-	_ = u.redisRepo.Set(ctx, url, shortCode)
+	if err := u.redisRepo.Set(ctx, shortCode, url); err != nil {
+		l.Warn(
+			"failed to write cache",
+			slog.String("short_code", shortCode),
+			slog.String("err", err.Error()),
+		)
+	}
 
 	l.Debug(
 		"URL retrieved via Postgres",
@@ -135,20 +141,16 @@ func (u *UrlShortenerService) CreateShortCode(ctx context.Context, url string) (
 
 			if errors.Is(err, repository_urlshortener_postgres.ErrAlredyExists) {
 				l.Warn(
-					"short code conflict detected, retrying...",
+					"short code conflict, retrying...",
 					slog.String("short_code", shortCode),
 					slog.Int("attempt", attempt+1),
 				)
-
-				if attempt == 2 {
-					return "", repository_urlshortener_postgres.ErrAlredyExists
-				}
 
 				continue
 			}
 
 			l.Error(
-				"failed to create short code via Postgres",
+				"Internal Postgres error",
 				slog.String("err", err.Error()),
 			)
 
@@ -160,15 +162,15 @@ func (u *UrlShortenerService) CreateShortCode(ctx context.Context, url string) (
 	}
 
 	if err := u.redisRepo.Set(ctx, url, shortCode); err != nil {
-		l.Error(
-			"failed to set URL and short code via Redis",
+		l.Warn(
+			"failed to write cache",
 			slog.String("short_code", shortCode),
 			slog.String("err", err.Error()),
 		)
 	}
 
 	l.Debug(
-		"Short code succesfully created",
+		"Short code successfully created",
 		slog.String("url", url),
 	)
 
